@@ -1,0 +1,7 @@
+*Backup.csproj
+*.vs/
+*.vscode/
+*bin/
+*obj/
+*vs/
+*.bin
