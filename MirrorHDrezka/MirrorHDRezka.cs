@@ -1,5 +1,4 @@
-﻿using OpenPop.Mime;
-using OpenPop.Pop3;
+﻿using OpenPop.Pop3;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Mail;
@@ -13,44 +12,40 @@ namespace MirrorHDrezka
     {
         static readonly string emailHDrezka = "mirror@hdrezka.org";
 
+        static readonly string extension = "org";
+
         public static async Task OpenAsync(string from, string password)
         {
-            string adres = POP3(from, password);
-            bool websiteWorking = false;
+            string adres = Get(from, password);
             if (adres != null)
             {
-                websiteWorking = MirrorUp("https://" + adres);
+                bool websiteWorking = IsMirrorWork("https://" + adres);
+                if (websiteWorking)
+                {
+                    Process.Start(new ProcessStartInfo("https://" + adres) { UseShellExecute = true });
+                    return;
+                }
             }
-            if (websiteWorking)
+            await SendAsync(from, password);
+            Thread.Sleep(5000);
+            adres = Get(from, password);
+            if (adres != null)
             {
                 Process.Start(new ProcessStartInfo("https://" + adres) { UseShellExecute = true });
             }
-            else
-            {
-                SendEmailAsync(from, password).GetAwaiter().GetResult();
-                Thread.Sleep(5000);
-                adres = POP3(from, password);
-                if (adres != null)
-                {
-                    Process.Start(new ProcessStartInfo("https://" + adres) { UseShellExecute = true });
-                }
-            }
         }
 
-        static bool MirrorUp(string url)
+        static bool IsMirrorWork(string url)
         {
-            HttpStatusCode result = default(HttpStatusCode);
             WebRequest request = HttpWebRequest.Create(url);
             request.Method = "HEAD";
             try
             {
-                using (HttpWebResponse response = request.GetResponse() as HttpWebResponse)
+                using HttpWebResponse response = request.GetResponse() as HttpWebResponse;
+                if (response != null)
                 {
-                    if (response != null)
-                    {
-                        result = response.StatusCode;
-                        response.Close();
-                    }
+                    HttpStatusCode result = response.StatusCode;
+                    response.Close();
                 }
             }
             catch (WebException wex)
@@ -59,52 +54,43 @@ namespace MirrorHDrezka
                 {
                     return false;
                 }
-                else
-                {
-                    return true;
-                }
             }
             return true;
         }
 
-        static string POP3(string from, string password)
+        static string Get(string from, string password)
         {
-            Pop3Client pop3 = new Pop3Client();
-            Pop3Message message = default;
+            Pop3Client pop3 = new();
 
             pop3.Connect("pop.mail.ru", 995, true);
             pop3.Authenticate(from, password);
 
             int messageCount = pop3.GetMessageCount();
-            for (int i = messageCount; i > 0; i--)
+
+            for (int i = messageCount; i > 0 && messageCount - 40 < i; i--)
             {
-                message = pop3.GetMessage(i);
+                Pop3Message message = pop3.GetMessage(i);
                 if (message.Headers.From.Address == emailHDrezka)
                 {
-                    break;
-                }
-            }
-            if (message != null)
-            {
-                MessagePart plainTextPart = message.FindFirstPlainTextVersion();
-                string bodyMailTxt = plainTextPart.GetBodyAsText();
+                    string bodyMailText = message.FindFirstPlainTextVersion().GetBodyAsText();
+                    bodyMailText = bodyMailText.Replace("\n\r", " ");
 
-                bodyMailTxt = bodyMailTxt.Replace('\n', ' ');
-                bodyMailTxt = bodyMailTxt.Replace('\r', ' ');
-                foreach (string word in bodyMailTxt.Split(' '))
-                {
-                    if (word.Contains(".net"))
+                    foreach (string word in bodyMailText.Split(' '))
                     {
-                        return word;
+                        if (word.Contains("." + extension))
+                        {
+                            return word;
+                        }
                     }
+                    break;
                 }
             }
             return null;
         }
 
-        static async Task SendEmailAsync(string from, string password)
+        static async Task SendAsync(string from, string password)
         {
-            SmtpClient client = new SmtpClient
+            SmtpClient client = new()
             {
                 UseDefaultCredentials = false,
                 Port = 25,
@@ -116,16 +102,11 @@ namespace MirrorHDrezka
                 Credentials = new NetworkCredential(from, password)
             };
 
-            MailMessage mailMessage = new MailMessage
+            MailMessage mailMessage = new()
             {
                 From = new MailAddress(from)
             };
             mailMessage.To.Add(emailHDrezka);
-            mailMessage.BodyEncoding = System.Text.Encoding.UTF8;
-            mailMessage.BodyTransferEncoding = System.Net.Mime.TransferEncoding.Base64;
-            mailMessage.IsBodyHtml = true;
-            mailMessage.Priority = MailPriority.Normal;
-            mailMessage.SubjectEncoding = System.Text.Encoding.UTF8;
 
             await client.SendMailAsync(mailMessage);
             client.Dispose();
