@@ -12,7 +12,9 @@ namespace MirrorHDrezka
     {
         static readonly string emailHDrezka = "mirror@hdrezka.org";
 
-        static readonly string extension = "org";
+        static readonly string extension1 = "net";
+
+        static readonly string extension2 = "org";
 
         public static async Task OpenAsync(string from, string password)
         {
@@ -77,7 +79,7 @@ namespace MirrorHDrezka
 
                     foreach (string word in bodyMailText.Split(' '))
                     {
-                        if (word.Contains("." + extension))
+                        if (word.Contains("." + extension1)|| word.Contains("." + extension2))
                         {
                             return word;
                         }
