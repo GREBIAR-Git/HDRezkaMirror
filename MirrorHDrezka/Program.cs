@@ -6,7 +6,7 @@ namespace MirrorHDrezka
     {
         static void Main()
         {
-            MirrorHDRezka.OpenAsync("почта", "пароль").GetAwaiter().GetResult();//только майл
+            MirrorHDRezka.OpenAsync("Адрес почты", "пароль").GetAwaiter().GetResult();
             Process.GetCurrentProcess().Kill();
         }
     }

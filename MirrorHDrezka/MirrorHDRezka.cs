@@ -1,4 +1,6 @@
-﻿using OpenPop.Pop3;
+﻿using MailKit;
+using MailKit.Net.Imap;
+using OpenPop.Pop3;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Mail;
@@ -18,7 +20,8 @@ namespace MirrorHDrezka
 
         public static async Task OpenAsync(string from, string password)
         {
-            string adres = Get(from, password);
+            //string adres = Get(from, password);//Если на почте нет сортировки писем от HDrezki в папку HDrezka (этот вариант медленнее, как минимум, в 3 раза)
+            string adres = GetIMAP(from, password);//Если сортировка - есть
             if (adres != null)
             {
                 bool websiteWorking = IsMirrorWork("https://" + adres);
@@ -68,7 +71,6 @@ namespace MirrorHDrezka
             pop3.Authenticate(from, password);
 
             int messageCount = pop3.GetMessageCount();
-
             for (int i = messageCount; i > 0 && messageCount - 40 < i; i--)
             {
                 Pop3Message message = pop3.GetMessage(i);
@@ -79,7 +81,7 @@ namespace MirrorHDrezka
 
                     foreach (string word in bodyMailText.Split(' '))
                     {
-                        if (word.Contains("." + extension1)|| word.Contains("." + extension2))
+                        if (word.Contains("." + extension1) || word.Contains("." + extension2))
                         {
                             return word;
                         }
@@ -87,6 +89,34 @@ namespace MirrorHDrezka
                     break;
                 }
             }
+            return null;
+        }
+
+        static string GetIMAP(string from, string password)
+        {
+            using var client = new ImapClient();
+            client.Connect("imap.mail.ru", 993, true);
+
+            client.Authenticate(from, password);
+
+            var folder = client.GetFolder("INBOX/HDrezka");
+            folder.Open(FolderAccess.ReadOnly);
+
+            var message = folder.GetMessage(folder.Count - 1);
+
+            string bodyMailText = message.TextBody;
+            bodyMailText = bodyMailText.Replace("\n\r", " ");
+
+            foreach (string word in bodyMailText.Split(' '))
+            {
+                if (word.Contains("." + extension1) || word.Contains("." + extension2))
+                {
+                    client.Disconnect(true);
+                    return word;
+                }
+            }
+
+            client.Disconnect(true);
             return null;
         }
 
