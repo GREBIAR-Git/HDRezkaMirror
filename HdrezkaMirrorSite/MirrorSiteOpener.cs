@@ -29,10 +29,10 @@ public class MirrorSiteOpener
         string adres = Get(from, password);
         if (adres != null)
         {
-            bool websiteWorking = await IsMirrorWork("https://" + adres);
+            bool websiteWorking = await IsMirrorWork("http://" + adres);
             if (websiteWorking)
             {
-                Process.Start(new ProcessStartInfo("https://" + adres) { UseShellExecute = true });
+                Process.Start(new ProcessStartInfo("http://" + adres) { UseShellExecute = true });
                 return;
             }
         }
@@ -52,7 +52,7 @@ public class MirrorSiteOpener
                 adres = Get(from, password);
                 if (adres != null)
                 {
-                    Process.Start(new ProcessStartInfo("https://" + adres) { UseShellExecute = true });
+                    Process.Start(new ProcessStartInfo("http://" + adres) { UseShellExecute = true });
                 }
                 return;
             }
