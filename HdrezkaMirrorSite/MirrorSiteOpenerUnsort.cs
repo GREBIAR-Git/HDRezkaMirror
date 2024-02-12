@@ -1,9 +1,9 @@
 ﻿using MailKit;
 using MailKit.Net.Imap;
+using MailKit.Search;
 
 namespace HdrezkaMirrorSite;
 
-//Если на почте нет сортировки писем от HDrezki в папку HDrezka
 public class MirrorSiteOpenerUnsort : MirrorSiteOpener
 {
     public MirrorSiteOpenerUnsort(string from, string password) : base(from, password)
@@ -17,32 +17,43 @@ public class MirrorSiteOpenerUnsort : MirrorSiteOpener
 
         client.Authenticate(from, password);
 
-        var folder = client.GetFolder("INBOX");
-        folder.Open(FolderAccess.ReadOnly);
+        client.Inbox.Open(FolderAccess.ReadOnly);
 
-        int messageCount = folder.Count - 1;
+        var query = SearchQuery.FromContains(emailHDrezka);
+        var uids = client.Inbox.Search(query);
 
-        for (int i = messageCount; i > 0 && messageCount - 40 < i; i--)
+        foreach (var uid in uids)
         {
-            var message = folder.GetMessage(i);
+            var message = client.Inbox.GetMessage(uid);
+            string bodyMailText = message.TextBody;
+            bodyMailText = bodyMailText.Replace("\r\n", " ");
 
-            if (message.From.ToString() == emailHDrezka)
+            foreach (string word in bodyMailText.Split(' '))
             {
-                string bodyMailText = message.TextBody;
-                bodyMailText = bodyMailText.Replace("\n\r", " ");
-
-                foreach (string word in bodyMailText.Split(' '))
+                if (word.Contains("." + extension1) || word.Contains("." + extension2))
                 {
-                    if (word.Contains("." + extension1) || word.Contains("." + extension2))
-                    {
-                        client.Disconnect(true);
-                        return word;
-                    }
+                    client.Disconnect(true);
+                    return word;
                 }
-                break;
             }
+            break;
         }
         client.Disconnect(true);
         return null;
+    }
+
+    protected override int CountMessage(string from, string password)
+    {
+        using var client = new ImapClient();
+        client.Connect("imap.mail.ru", 993, true);
+
+        client.Authenticate(from, password);
+
+        client.Inbox.Open(FolderAccess.ReadOnly);
+
+        var query = SearchQuery.FromContains(emailHDrezka);
+        var uids = client.Inbox.Search(query);
+
+        return uids.Count;
     }
 }

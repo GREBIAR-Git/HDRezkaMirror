@@ -9,7 +9,7 @@ class Program
     public static void Main()
     {
         Console.OutputEncoding = System.Text.Encoding.Unicode;
-        new MirrorSiteOpener("адрес", "пароль");
+        new MirrorSiteOpener("адрес", "пароль для внешних приложений");
         Process.GetCurrentProcess().Kill();
     }
 }

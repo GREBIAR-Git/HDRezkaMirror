@@ -4,13 +4,13 @@ using ShellProgressBar;
 using System;
 using System.Diagnostics;
 using System.Net;
+using System.Net.Http;
 using System.Net.Mail;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace HdrezkaMirrorSite;
 
-//Если на почте есть сортировка писем от HDrezki в папку HDrezka
 public class MirrorSiteOpener
 {
     protected readonly string emailHDrezka = "mirror@hdrezka.org";
@@ -63,24 +63,24 @@ public class MirrorSiteOpener
 
     async Task<bool> IsMirrorWork(string url)
     {
-        WebRequest request = WebRequest.Create(url);
-        request.Method = "HEAD";
+        string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36";
+
+        using var client = new HttpClient();
+        client.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
+
         try
         {
-            using HttpWebResponse response = await request.GetResponseAsync() as HttpWebResponse;
-            return true;
+            var result = await client.GetAsync(url);
+
+            return result.RequestMessage.RequestUri.OriginalString == url;
         }
-        catch (WebException wex) when (wex.InnerException != null)
+        catch (HttpRequestException)
         {
             return false;
         }
-        catch (WebException)
-        {
-            return true;
-        }
     }
 
-    int CountMessage(string from, string password)
+    protected virtual int CountMessage(string from, string password)
     {
         using var client = new ImapClient();
         client.Connect("imap.mail.ru", 993, true);
@@ -103,18 +103,20 @@ public class MirrorSiteOpener
 
         var folder = client.GetFolder("INBOX/HDrezka");
         folder.Open(FolderAccess.ReadOnly);
-
-        var message = folder.GetMessage(folder.Count - 1);
-
-        string bodyMailText = message.TextBody;
-        bodyMailText = bodyMailText.Replace("\n\r", " ");
-
-        foreach (string word in bodyMailText.Split(' '))
+        if (folder.Count > 0)
         {
-            if (word.Contains("." + extension1) || word.Contains("." + extension2))
+            var message = folder.GetMessage(folder.Count - 1);
+
+            string bodyMailText = message.TextBody;
+            bodyMailText = bodyMailText.Replace("\r\n", " ");
+
+            foreach (string word in bodyMailText.Split(' '))
             {
-                client.Disconnect(true);
-                return word;
+                if (word.Contains("." + extension1) || word.Contains("." + extension2))
+                {
+                    client.Disconnect(true);
+                    return word;
+                }
             }
         }
 
