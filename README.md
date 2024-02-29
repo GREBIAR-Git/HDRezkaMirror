@@ -1,32 +1,28 @@
-# Описание
+# <img src="HdrezkaMirrorLauncher/HDrezka.ico" width="30"> HDRezkaMirror
 
 Данное приложение предназначено для автоматической проверки доступности зеркал и получения актуальной версии сайта HDrezka через электронную почту. Оно обеспечивает пользователям быстрый и удобный доступ к сайту HDrezka, сокращая время на открытие почты и отправку сообщений, а также проверку работоспособности ссылки. Пользователи могут быть уверены, что всегда имеют доступ к актуальной информации и контенту сайта HDrezka без необходимости тратить время на рутинные действия.
 
-# Важное
+# Запуск
 
-Для работы приложения нужно заполнить адрес и пароль (для внешних приложений) от своего почтового ящика (путь к файлу - \\\HdrezkaMirrorLauncher\\\Program.cs).
-
+1. **Скачайте ZIP** со всеми необходимыми файлами [здесь](https://github.com/GREBIAR-Git/HDRezkaMirror/releases/download/1.0/HdrezkaLauncher.zip)
+2. Откройте файл **config.yml**
+3. Введите логин и внешний пароль от своей почты, а также выберете есть ли у вас [сортировка писем](#сортировка-писем)
+   ```yml
+   EmailIsSorted: yes/no
+   Login: логин_от_почты@mail.ru
+   Password: внешний_пароль_от_почты
+   ```
+   
+4. Запустите HdrezkaLauncher.exe
+# Сортировка писем
+* Если вы создали на почте папку под названием HDrezka и сделали фильтр, как на приложенном скриншоте, то в EmailIsSorted указываем yes.
 <div align=center>
-  <img width=580 height=340 src="https://github.com/GREBIAR-Git/HDRezkaMirror/assets/74742355/7ee24cc4-63d5-4d0c-b0fd-de59eab8ab2c">
+<img width=580 height=340 src="https://github.com/GREBIAR-Git/HDRezkaMirror/assets/74742355/58566049-60e8-4326-9088-9073114b38db">
 </div>
 
-Есть 2 варианта работы приложения:
+* Иначе указываем no.
 
-1. Быстрый: надо зайти на почту и создать папку под названием HDrezka и сделать фильтр как на приложенном скриншоте.
-   
-   <div align=center>
-     <img width=580 height=340 src="https://github.com/GREBIAR-Git/HDRezkaMirror/assets/74742355/58566049-60e8-4326-9088-9073114b38db">
-   </div>
-
-2. Немного медленее: надо поменять создаваемый объект типа MirrorSiteOpener на MirrorSiteOpenerUnsort в файле по пути \\\HdrezkaMirrorLauncher\\\Program.cs.
-   
-   <div align=center>
-     <img width=580 height=340 src="https://github.com/GREBIAR-Git/HDRezkaMirror/assets/74742355/27904f5c-b9d4-45ed-9bd0-ac62eecbe10e">
-   </div>
-
-# Функционал
-
-Процесс работы приложения:
+# Процесс работы приложения
 1. Приложение начинает работу с поиска последнего сообщения на почте с адреса "mirror@hdrezka.org".
 2. Затем оно парсит сообщение для извлечения ссылки на зеркало hdrezka.
 3. Если ссылка не заблокирована, приложение открывает её в браузере.
@@ -35,16 +31,15 @@
 6. Если ответ пришёл, приложение открывает сайт.
 7. Если ответ не пришёл, то приложение закрывается.
 
-# Демонстрация работы программы 
-
+# Демонстрация работы программы
 Если последнее письмо на почте с актуальной ссылкой:
- 
+
 <div align=center>
-  <img width=580 height=340 src="https://github.com/GREBIAR-Git/HDRezkaMirror/assets/74742355/97d61cbb-ca8c-4fd8-b946-32806815ddf1">
+<img width=580 height=340 src="https://github.com/GREBIAR-Git/HDRezkaMirror/assets/74742355/97d61cbb-ca8c-4fd8-b946-32806815ddf1">
 </div>
 
-Если последнее письмо на почте с неактуально ссылкой:
- 
+Если последнее письмо на почте с неактуальной ссылкой:
+
 <div align=center>
-  <img width=580 height=340 src="https://github.com/GREBIAR-Git/HDRezkaMirror/assets/74742355/da711767-2c67-46e4-9455-e17054b959d7">
+<img width=580 height=340 src="https://github.com/GREBIAR-Git/HDRezkaMirror/assets/74742355/da711767-2c67-46e4-9455-e17054b959d7">
 </div>

@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HdrezkaMirrorLauncher", "Hd
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HdrezkaMirrorSite", "HdrezkaMirrorSite\HdrezkaMirrorSite.csproj", "{9844558C-9965-4EBD-A4E3-78F9F2A8F3F7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HdrezkaMirrorConfigLauncher", "HdrezkaMirrorConfigLauncher\HdrezkaMirrorConfigLauncher.csproj", "{57E755E4-B9BA-4771-B752-5F77CD2991B2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{9844558C-9965-4EBD-A4E3-78F9F2A8F3F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9844558C-9965-4EBD-A4E3-78F9F2A8F3F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9844558C-9965-4EBD-A4E3-78F9F2A8F3F7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57E755E4-B9BA-4771-B752-5F77CD2991B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57E755E4-B9BA-4771-B752-5F77CD2991B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57E755E4-B9BA-4771-B752-5F77CD2991B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57E755E4-B9BA-4771-B752-5F77CD2991B2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

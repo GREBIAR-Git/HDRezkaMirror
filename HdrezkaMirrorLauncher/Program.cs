@@ -1,6 +1,7 @@
-﻿using HdrezkaMirrorSite;
-using System;
+﻿using System;
 using System.Diagnostics;
+using System.Text;
+using HdrezkaMirrorSite;
 
 namespace HdrezkaMirrorLauncher;
 
@@ -8,7 +9,7 @@ class Program
 {
     public static void Main()
     {
-        Console.OutputEncoding = System.Text.Encoding.Unicode;
+        Console.OutputEncoding = Encoding.Unicode;
         new MirrorSiteOpener("адрес", "пароль для внешних приложений");
         Process.GetCurrentProcess().Kill();
     }

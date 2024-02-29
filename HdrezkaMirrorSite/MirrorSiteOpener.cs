@@ -1,13 +1,14 @@
-﻿using MailKit;
-using MailKit.Net.Imap;
-using ShellProgressBar;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Net.Mail;
 using System.Threading;
 using System.Threading.Tasks;
+using MailKit;
+using MailKit.Net.Imap;
+using MimeKit;
+using ShellProgressBar;
 
 namespace HdrezkaMirrorSite;
 
@@ -26,51 +27,55 @@ public class MirrorSiteOpener
 
     async Task OpenAsync(string from, string password)
     {
-        string adres = Get(from, password);
-        if (adres != null)
+        string address = Get(from, password);
+        if (address != null)
         {
-            bool websiteWorking = await IsMirrorWork("http://" + adres);
+            bool websiteWorking = await IsMirrorWork("http://" + address);
             if (websiteWorking)
             {
-                Process.Start(new ProcessStartInfo("http://" + adres) { UseShellExecute = true });
+                Process.Start(new ProcessStartInfo("http://" + address) { UseShellExecute = true });
                 return;
             }
         }
+
         await SendAsync(from, password);
         int countMsg = CountMessage(from, password);
         Console.WriteLine("Запрос зеркала...");
-        var options = new ProgressBarOptions
+        ProgressBarOptions options = new()
         {
             ProgressCharacter = '─',
             ProgressBarOnBottom = true
         };
-        using var pbar = new ProgressBar(20, "Получение зеркала", options);
+        using ProgressBar progressBar = new(20, "Получение зеркала", options);
         for (int i = 0; i < 20; i++)
         {
             if (countMsg != CountMessage(from, password))
             {
-                adres = Get(from, password);
-                if (adres != null)
+                address = Get(from, password);
+                if (address != null)
                 {
-                    Process.Start(new ProcessStartInfo("http://" + adres) { UseShellExecute = true });
+                    Process.Start(new ProcessStartInfo("http://" + address) { UseShellExecute = true });
                 }
+
                 return;
             }
-            pbar.Tick();
+
+            progressBar.Tick();
             Thread.Sleep(250);
         }
     }
 
     async Task<bool> IsMirrorWork(string url)
     {
-        string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36";
+        string userAgent =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36";
 
-        using var client = new HttpClient();
+        using HttpClient client = new();
         client.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
 
         try
         {
-            var result = await client.GetAsync(url);
+            HttpResponseMessage result = await client.GetAsync(url);
 
             return result.RequestMessage.RequestUri.OriginalString == url;
         }
@@ -82,12 +87,12 @@ public class MirrorSiteOpener
 
     protected virtual int CountMessage(string from, string password)
     {
-        using var client = new ImapClient();
+        using ImapClient client = new();
         client.Connect("imap.mail.ru", 993, true);
 
         client.Authenticate(from, password);
 
-        var folder = client.GetFolder("INBOX/HDrezka");
+        IMailFolder folder = client.GetFolder("INBOX/HDrezka");
         folder.Open(FolderAccess.ReadOnly);
 
         client.Disconnect(true);
@@ -96,16 +101,16 @@ public class MirrorSiteOpener
 
     protected virtual string Get(string from, string password)
     {
-        using var client = new ImapClient();
+        using ImapClient client = new();
         client.Connect("imap.mail.ru", 993, true);
 
         client.Authenticate(from, password);
 
-        var folder = client.GetFolder("INBOX/HDrezka");
+        IMailFolder folder = client.GetFolder("INBOX/HDrezka");
         folder.Open(FolderAccess.ReadOnly);
         if (folder.Count > 0)
         {
-            var message = folder.GetMessage(folder.Count - 1);
+            MimeMessage message = folder.GetMessage(folder.Count - 1);
 
             string bodyMailText = message.TextBody;
             bodyMailText = bodyMailText.Replace("\r\n", " ");
