@@ -1,16 +1,10 @@
-﻿using System;
-using System.Diagnostics;
-using System.Text;
+﻿using System.Text;
 using HdrezkaMirrorSite;
 
-namespace HdrezkaMirrorLauncher;
+Console.OutputEncoding = Encoding.Unicode;
+MirrorSiteOpener mirrorSiteOpener = new("адрес", "пароль");
+await mirrorSiteOpener.Open();
 
-class Program
-{
-    public static void Main()
-    {
-        Console.OutputEncoding = Encoding.Unicode;
-        new MirrorSiteOpener("адрес", "пароль для внешних приложений");
-        Process.GetCurrentProcess().Kill();
-    }
-}
+await Task.Delay(1000);
+
+Environment.Exit(0);

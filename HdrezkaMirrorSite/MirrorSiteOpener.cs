@@ -1,82 +1,78 @@
-﻿using System;
-using System.Diagnostics;
-using System.Net;
-using System.Net.Http;
+﻿using System.Diagnostics;
 using System.Net.Mail;
-using System.Threading;
-using System.Threading.Tasks;
-using MailKit;
-using MailKit.Net.Imap;
+using System.Runtime.InteropServices;
 using MimeKit;
 using ShellProgressBar;
 
 namespace HdrezkaMirrorSite;
 
-public class MirrorSiteOpener
+public class MirrorSiteOpener(string from, string password)
 {
-    protected readonly string emailHDrezka = "mirror@hdrezka.org";
-
-    protected readonly string extension1 = "net";
-
-    protected readonly string extension2 = "org";
-
-    public MirrorSiteOpener(string from, string password)
+    public async Task Open()
     {
-        OpenAsync(from, password).Wait();
-    }
-
-    async Task OpenAsync(string from, string password)
-    {
-        string address = Get(from, password);
+        using var main = new ProgressBar(2, "Получаем закэшированный адрес...", ProgressBarTheme.MainTheme());
+        string? address = await Get();
         if (address != null)
         {
-            bool websiteWorking = await IsMirrorWork("http://" + address);
-            if (websiteWorking)
+            main.Tick("Проверяем работоспособность зеркала...");
+            address = "http://" + address;
+            bool isWebsiteWorking = await IsMirrorWork(address);
+            if (isWebsiteWorking)
             {
-                Process.Start(new ProcessStartInfo("http://" + address) { UseShellExecute = true });
+                main.Tick("Открываем актулаьное зеркало...");
+                OpenBrowser(address);
                 return;
             }
         }
 
-        await SendAsync(from, password);
-        int countMsg = CountMessage(from, password);
-        Console.WriteLine("Запрос зеркала...");
-        ProgressBarOptions options = new()
-        {
-            ProgressCharacter = '─',
-            ProgressBarOnBottom = true
-        };
-        using ProgressBar progressBar = new(20, "Получение зеркала", options);
+        main.Tick("Запрашиваем зеркало...");
+        using var child = main.Spawn(20, "Ждём ответ", ProgressBarTheme.SubTheme());
+        await Send();
+        int initialMessageCount = await MessageNumber();
         for (int i = 0; i < 20; i++)
         {
-            if (countMsg != CountMessage(from, password))
+            if (initialMessageCount != await MessageNumber())
             {
-                address = Get(from, password);
+                address = await Get();
                 if (address != null)
                 {
-                    Process.Start(new ProcessStartInfo("http://" + address) { UseShellExecute = true });
+                    OpenBrowser("http://" + address);
                 }
 
                 return;
             }
 
-            progressBar.Tick();
-            Thread.Sleep(250);
+            child.Tick();
+            await Task.Delay(250);
         }
     }
 
-    async Task<bool> IsMirrorWork(string url)
-    {
-        string userAgent =
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36";
 
+    static void OpenBrowser(string address)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            Process.Start(new ProcessStartInfo(address) { UseShellExecute = true });
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            Process.Start("xdg-open", address);
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            Process.Start("open", address);
+        }
+    }
+
+    static async Task<bool> IsMirrorWork(string url)
+    {
         using HttpClient client = new();
-        client.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
+        client.Timeout = TimeSpan.FromMinutes(10);
+        client.DefaultRequestHeaders.UserAgent.ParseAdd(Configuration.UserAgent);
 
         try
         {
             HttpResponseMessage result = await client.GetAsync(url);
-
             return result.RequestMessage.RequestUri.OriginalString == url;
         }
         catch (HttpRequestException)
@@ -85,71 +81,44 @@ public class MirrorSiteOpener
         }
     }
 
-    protected virtual int CountMessage(string from, string password)
+    protected virtual async Task<int> MessageNumber()
     {
-        using ImapClient client = new();
-        client.Connect("imap.mail.ru", 993, true);
-
-        client.Authenticate(from, password);
-
-        IMailFolder folder = client.GetFolder("INBOX/HDrezka");
-        folder.Open(FolderAccess.ReadOnly);
-
-        client.Disconnect(true);
-        return folder.Count;
+        int messageCount = 0;
+        await Email.FolderAction(from, password, folder =>
+        {
+            messageCount = folder.Count;
+            return Task.CompletedTask;
+        });
+        return messageCount;
     }
 
-    protected virtual string Get(string from, string password)
+    protected virtual async Task<string?> Get()
     {
-        using ImapClient client = new();
-        client.Connect("imap.mail.ru", 993, true);
-
-        client.Authenticate(from, password);
-
-        IMailFolder folder = client.GetFolder("INBOX/HDrezka");
-        folder.Open(FolderAccess.ReadOnly);
-        if (folder.Count > 0)
+        string? foundWord = null;
+        await Email.FolderAction(from, password, async folder =>
         {
-            MimeMessage message = folder.GetMessage(folder.Count - 1);
-
-            string bodyMailText = message.TextBody;
-            bodyMailText = bodyMailText.Replace("\r\n", " ");
-
-            foreach (string word in bodyMailText.Split(' '))
+            if (folder.Count > 0)
             {
-                if (word.Contains("." + extension1) || word.Contains("." + extension2))
-                {
-                    client.Disconnect(true);
-                    return word;
-                }
-            }
-        }
+                MimeMessage message = await folder.GetMessageAsync(folder.Count - 1);
+                string bodyMailText = message.TextBody.Replace(Configuration.LineEndings, " ");
 
-        client.Disconnect(true);
-        return null;
+                foundWord = bodyMailText.Split(' ')
+                    .FirstOrDefault(word => Configuration.gTLD.Any(tld => word.Contains("." + tld)));
+            }
+        });
+        return foundWord;
     }
 
-    async Task SendAsync(string from, string password)
+    async Task Send()
     {
-        SmtpClient client = new()
-        {
-            UseDefaultCredentials = false,
-            Port = 25,
-            EnableSsl = true,
-            DeliveryFormat = SmtpDeliveryFormat.International,
-            DeliveryMethod = SmtpDeliveryMethod.Network,
-            Host = "smtp.mail.ru",
-            Timeout = 300000,
-            Credentials = new NetworkCredential(from, password)
-        };
+        using SmtpClient client = Email.Smtp(from, password);
 
         MailMessage mailMessage = new()
         {
-            From = new MailAddress(from)
+            From = new(from)
         };
-        mailMessage.To.Add(emailHDrezka);
+        mailMessage.To.Add(Configuration.emailHDrezka);
 
         await client.SendMailAsync(mailMessage);
-        client.Dispose();
     }
 }

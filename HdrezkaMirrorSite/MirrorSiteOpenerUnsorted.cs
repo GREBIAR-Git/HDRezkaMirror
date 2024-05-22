@@ -1,64 +1,41 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using MailKit;
-using MailKit.Net.Imap;
+﻿using MailKit;
 using MailKit.Search;
 using MimeKit;
 
 namespace HdrezkaMirrorSite;
 
-public class MirrorSiteOpenerUnsorted : MirrorSiteOpener
+public class MirrorSiteOpenerUnsorted(string from, string password) : MirrorSiteOpener(from, password)
 {
-    public MirrorSiteOpenerUnsorted(string from, string password) : base(from, password)
+    protected override async Task<string?> Get()
     {
-    }
-
-    protected override string Get(string from, string password)
-    {
-        using ImapClient client = new();
-        client.Connect("imap.mail.ru", 993, true);
-
-        client.Authenticate(from, password);
-
-        client.Inbox.Open(FolderAccess.ReadOnly);
-
-        TextSearchQuery query = SearchQuery.FromContains(emailHDrezka);
-        IList<UniqueId> uids = client.Inbox.Search(query);
-
-        foreach (UniqueId uid in uids.Reverse())
+        string? foundWord = null;
+        await Email.InboxAction(from, password, async (uids, inbox) =>
         {
-            MimeMessage message = client.Inbox.GetMessage(uid);
-            string bodyMailText = message.TextBody;
-            bodyMailText = bodyMailText.Replace("\r\n", " ");
-
-            foreach (string word in bodyMailText.Split(' '))
+            foreach (UniqueId uid in uids.Reverse())
             {
-                if (word.Contains("." + extension1) || word.Contains("." + extension2))
-                {
-                    client.Disconnect(true);
-                    return word;
-                }
+                MimeMessage message = await inbox.GetMessageAsync(uid);
+                string bodyMailText = message.TextBody;
+                bodyMailText = bodyMailText.Replace("\r\n", " ");
+
+                foundWord = bodyMailText.Split(' ')
+                    .FirstOrDefault(word => Configuration.gTLD.Any(tld => word.Contains("." + tld)));
             }
-
-            break;
-        }
-
-        client.Disconnect(true);
-        return null;
+        });
+        return foundWord;
     }
 
-    protected override int CountMessage(string from, string password)
+    protected override async Task<int> MessageNumber()
     {
-        using ImapClient client = new();
-        client.Connect("imap.mail.ru", 993, true);
+        int messageNumber = 0;
+        await Email.InboxAction(from, password, (uids, inbox) =>
+        {
+            inbox.Open(FolderAccess.ReadOnly);
 
-        client.Authenticate(from, password);
-
-        client.Inbox.Open(FolderAccess.ReadOnly);
-
-        TextSearchQuery query = SearchQuery.FromContains(emailHDrezka);
-        IList<UniqueId> uids = client.Inbox.Search(query);
-
-        return uids.Count;
+            TextSearchQuery query = SearchQuery.FromContains(Configuration.emailHDrezka);
+            uids = inbox.Search(query);
+            messageNumber = uids.Count;
+            return null;
+        });
+        return messageNumber;
     }
 }
