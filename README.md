@@ -4,7 +4,7 @@
 
 # Запуск
 
-1. **Скачайте ZIP** со всеми необходимыми файлами [здесь](https://github.com/GREBIAR-Git/HDRezkaMirror/releases/download/1.0/HdrezkaLauncher.zip)
+1. **Скачайте ZIP** со всеми необходимыми файлами [здесь](https://github.com/GREBIAR-Git/HDRezkaMirror/releases/tag/1.1)
 2. Откройте файл **config.yml**
 3. Введите логин и внешний пароль от своей почты, а также выберете есть ли у вас [сортировка писем](#сортировка-писем)
    ```yml
@@ -13,7 +13,7 @@
    Password: внешний_пароль_от_почты
    ```
    
-4. Запустите HdrezkaLauncher.exe
+4. Запустите HdrezkaConfigLauncher.exe
 # Сортировка писем
 * Если вы создали на почте папку под названием HDrezka и сделали фильтр, как на приложенном скриншоте, то в EmailIsSorted указываем yes.
 <div align=center>
@@ -35,11 +35,11 @@
 Если последнее письмо на почте с актуальной ссылкой:
 
 <div align=center>
-<img width=580 height=340 src="https://github.com/GREBIAR-Git/HDRezkaMirror/assets/74742355/97d61cbb-ca8c-4fd8-b946-32806815ddf1">
+<img width=580 height=340 src="https://github.com/GREBIAR-Git/HDRezkaMirror/assets/74742355/7ed64c31-2f64-44e3-87ee-9de85a66384a">
 </div>
 
 Если последнее письмо на почте с неактуальной ссылкой:
 
 <div align=center>
-<img width=580 height=340 src="https://github.com/GREBIAR-Git/HDRezkaMirror/assets/74742355/da711767-2c67-46e4-9455-e17054b959d7">
+<img width=580 height=340 src="https://github.com/GREBIAR-Git/HDRezkaMirror/assets/74742355/e01ee1f0-e94a-4556-aac0-7470ceef9c6a">
 </div>
